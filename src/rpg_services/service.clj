@@ -3,13 +3,14 @@
             [io.pedestal.http.route :as route]
             [io.pedestal.http.body-params :as body-params]
             [ring.util.response :as ring-resp]
-
+            [clojure.walk :as walk]
             [cheshire.core            :refer :all]
             [monger.core :as mg]
             [monger.collection :as mc]
             [monger.conversion :as mgcon]
             [monger.operators :refer :all]
-            [rpg-services.database :refer [db]]))
+            [rpg-services.database :refer [db]]
+            [rpg-services.database.city-encounters :refer [add-encounter]]))
 
 (defn about-page
   [request]
@@ -21,12 +22,18 @@
   [request]
   (ring-resp/response "Hello World!"))
 
-(defn get-user [email]
-  (dissoc (first (mc/find-maps db "users" {:email email})) :_id))
+; (defn get-user [email]
+;   (dissoc (first (mc/find-maps db "users" {:email email})) :_id))
 
 (defn respond-hello
   [request]
-  {:status 200 :body (generate-string (get-user "test@test.com"))})
+  {:status 200 :body (generate-string "hello2")})
+
+
+(defn respond-hello2
+  [{:keys [headers params json-params path-params] :as request}]
+  (add-encounter json-params)
+  (ring-resp/response "Handle Response"))
 
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
@@ -36,7 +43,8 @@
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/about" :get (conj common-interceptors `about-page)]
-              ["/test" :get  [`respond-hello]]})
+              ["/test" :get  [`respond-hello]]
+              ["/city-encounter" :post (conj common-interceptors `respond-hello2)]})
 
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
