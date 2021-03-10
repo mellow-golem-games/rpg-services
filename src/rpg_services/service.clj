@@ -10,7 +10,7 @@
             [monger.conversion :as mgcon]
             [monger.operators :refer :all]
             [rpg-services.database :refer [db]]
-            [rpg-services.database.city-encounters :refer [add-encounter]]))
+            [rpg-services.database.city-encounters :refer [add-encounter get-random-encounter]]))
 
 (defn about-page
   [request]
@@ -35,6 +35,9 @@
   (add-encounter json-params)
   (ring-resp/response "Handle Response"))
 
+(defn handle-get-random-encounter [{:keys [headers params json-params path-params] :as request}]
+  (ring-resp/response (get-random-encounter params)))
+
 ;; Defines "/" and "/about" routes with their associated :get handlers.
 ;; The interceptors defined after the verb map (e.g., {:get home-page}
 ;; apply to / and its children (/about).
@@ -43,9 +46,8 @@
 ;; Tabular routes
 (def routes #{["/" :get (conj common-interceptors `home-page)]
               ["/about" :get (conj common-interceptors `about-page)]
-              ["/test" :get  [`respond-hello]]
-              ["/city-encounter" :post (conj common-interceptors `respond-hello2)]})
-
+              ["/city-encounter" :post (conj common-interceptors `respond-hello2)]
+              ["/city-encounter" :get (conj common-interceptors `handle-get-random-encounter)]})
 ;; Map-based routes
 ;(def routes `{"/" {:interceptors [(body-params/body-params) http/html-body]
 ;                   :get home-page
