@@ -6,16 +6,29 @@
             [rpg-services.database :refer [db]]
             [clojure.spec.alpha :as spec]))
 
-(spec/def ::size #{"Hamlet" "Village" "Town" "City" "Metropolis"})
-(spec/def ::outcomes #{"Good" "Bad" "Combat" "Roleplay" "Hook"})
-(spec/def ::type #{"Regular" "Fantastical"})
+(def SIZE_VALUES ["Hamlet" "Village" "Town" "City" "Metropolis"])
+(def OUTCOME_VALUES ["Good" "Neutral" "Bad" "Combat" "Roleplay" "Hook"])
 
-(spec/def ::city_encounter (spec/keys :req-un [::size ::outcomes ::type]))
+
+(defn check-all-vals-exist? [valid-vals vals]
+  "checks if a given vector's values are all present is a 2nd vector"
+  (reduce (fn [acc val]
+            (if (and (some #(= val %) valid-vals) acc) ; acc is true and val is presnet
+              true
+              false)) true vals))
+
+(spec/def ::name string?)
+(spec/def ::description string?)
+(spec/def ::size (partial check-all-vals-exist? SIZE_VALUES))
+(spec/def ::outcomes (partial check-all-vals-exist? OUTCOME_VALUES))
+
+(spec/def ::city_encounter (spec/keys :req-un [::name ::description ::size ::outcomes]))
 
 ; e.x
-; (spec/valid? ::city_encounter {:size "Hamlet" :outcomes "Good" :type "Regular"})
+; (spec/valid? ::city_encounter {:name "test" :description "test-desc" :size ["Hamlet" "Village"] :outcomes ["Good"]})
+; END SPECS
 
-; name description size outcome type
+
 (defn add-encounter [encounter]
   {:pre [(spec/valid? ::city_encounter encounter)]}
   (let [new-encounter (mc/insert-and-return db "city-encounters" encounter)]
@@ -23,7 +36,10 @@
 
 (defn get-random-encounter [select-map]
   (let [encounters (mc/find-maps db "city-encounters" select-map)]
-    (rand-nth encounters)))
+    (println (count encounters))
+    (if (> (count encounters) 0) ; an empty list is still true
+      (rand-nth encounters)
+      "No Encounters Found")))
 
 
 
